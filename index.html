@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>晚宴与停车RSVP | Gala Dinner &amp; Parking RSVP</title>
+    <title>晚宴和停车位登记 | Gala Dinner and Parking RSVP</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -65,7 +65,7 @@
             margin-bottom: 0.5rem;
         }
         input[type="text"],
-        input[type="email"] {
+        select {
             width: 100%;
             padding: 0.5rem;
             border: 1px solid #d1d5db;
@@ -73,15 +73,10 @@
             font-size: 1rem;
         }
         input[type="text"]:focus,
-        input[type="email"]:focus {
+        select:focus {
             outline: none;
             border-color: #00a8b0;
             box-shadow: 0 0 0 3px rgba(0, 168, 176, 0.1);
-        }
-        .radio-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
         }
         button {
             width: 100%;
@@ -111,32 +106,34 @@
     </div>
 
     <div class="container">
-        <h1>PHUSE SDE 2024 晚宴与停车RSVP<br><span>PHUSE SDE 2024 Gala Dinner &amp; Parking RSVP</span></h1>
+        <h1>PHUSE SDE 2024 晚宴和停车位登记<br><span>PHUSE SDE 2024 Gala Dinner and Parking RSVP</span></h1>
         
         <div class="form-container">
             <div class="form-content">
-                <div class="form-title">晚宴与停车RSVP | Gala Dinner &amp; Parking RSVP</div>
+                <div class="form-title">晚宴和停车位登记 | Gala Dinner and Parking RSVP</div>
                 <form id="rsvpForm">
                     <div class="form-group">
                         <label for="name">姓名 | Name</label>
                         <input type="text" id="name" name="name" required>
                     </div>
                     <div class="form-group">
-                        <label>您是否能参加晚宴？<br>Will you attend the Gala Dinner? (Nov 1, 6 PM)</label>
-                        <div class="radio-group">
-                            <label><input type="radio" name="dinner" value="yes" required> 是 | Yes</label>
-                            <label><input type="radio" name="dinner" value="no" required> 否 | No</label>
-                        </div>
+                        <label for="dinner">您是否能参加晚宴？（11月1日晚6点）<br>Will you attend the gala dinner? (November 1st, 6 PM)</label>
+                        <select id="dinner" name="dinner" required>
+                            <option value="">请选择 | Please select</option>
+                            <option value="yes">是 | Yes</option>
+                            <option value="no">否 | No</option>
+                        </select>
                     </div>
                     <div class="form-group">
-                        <label>您会议当天是否需要万丽酒店为您保留停车位？<br>Do you require a parking space at Renaissance Hotel on the day of the event?</label>
-                        <div class="radio-group">
-                            <label><input type="radio" name="parking" value="yes" required> 需要 | Yes</label>
-                            <label><input type="radio" name="parking" value="no" required> 不需要 | No</label>
-                        </div>
+                        <label for="parking">您会议当天是否需要万丽酒店为您保留停车位？<br>Do you need a parking space reserved at the Renaissance Hotel on the day of the conference?</label>
+                        <select id="parking" name="parking" required>
+                            <option value="">请选择 | Please select</option>
+                            <option value="yes">是 | Yes</option>
+                            <option value="no">否 | No</option>
+                        </select>
                     </div>
                     <div class="form-group">
-                        <button type="submit">提交 | Submit</button>
+                        <button type="submit">提交 RSVP | Submit RSVP</button>
                     </div>
                 </form>
                 <div id="message"></div>
@@ -153,6 +150,7 @@
         const firebaseConfig = {
             apiKey: "AIzaSyCus8htsBhc-rKHdd3pjsrkI1p0duUGIi0",
             authDomain: "gala-dinner-and-parking-rsvp.firebaseapp.com",
+            databaseURL: "https://gala-dinner-and-parking-rsvp-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "gala-dinner-and-parking-rsvp",
             storageBucket: "gala-dinner-and-parking-rsvp.appspot.com",
             messagingSenderId: "207329211520",
@@ -160,18 +158,27 @@
         };
 
         // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
+        try {
+            firebase.initializeApp(firebaseConfig);
+            console.log("Firebase initialized successfully");
+        } catch (error) {
+            console.error("Error initializing Firebase:", error);
+            document.getElementById('message').textContent = '初始化错误，请稍后再试。| Initialization error, please try again later.';
+        }
 
         // Get a reference to the database service
         const database = firebase.database();
-        const rsvpRef = database.ref('rsvp');
+        const rsvpRef = database.ref('rsvps');
         
         document.getElementById('rsvpForm').addEventListener('submit', function(e) {
             e.preventDefault();
-
+            console.log("Form submitted");
+            
             const name = document.getElementById('name').value;
-            const dinner = document.querySelector('input[name="dinner"]:checked').value;
-            const parking = document.querySelector('input[name="parking"]:checked').value;
+            const dinner = document.getElementById('dinner').value;
+            const parking = document.getElementById('parking').value;
+
+            console.log("Form data:", { name, dinner, parking });
 
             rsvpRef.push({
                 name: name,
@@ -179,11 +186,12 @@
                 parking: parking,
                 timestamp: firebase.database.ServerValue.TIMESTAMP
             }).then(() => {
-                document.getElementById('message').textContent = 'RSVP成功！| RSVP successful!';
+                console.log("Data pushed to Firebase successfully");
+                document.getElementById('message').textContent = 'RSVP 成功！| RSVP successful!';
                 document.getElementById('rsvpForm').reset();
             }).catch((error) => {
+                console.error('Error pushing data to Firebase:', error);
                 document.getElementById('message').textContent = '发生错误，请稍后再试。| An error occurred, please try again later.';
-                console.error('Error:', error);
             });
         });
     </script>
